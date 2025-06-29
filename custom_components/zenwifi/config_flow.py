@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
@@ -14,7 +16,9 @@ from .api import (
     ZenWifiApiClientCommunicationError,
     ZenWifiApiClientError,
 )
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ZenWifiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -35,13 +39,13 @@ class ZenWifiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     password=user_input[CONF_PASSWORD],
                 )
             except ZenWifiApiClientAuthenticationError as exception:
-                LOGGER.warning(exception)
+                _LOGGER.warning(exception)
                 _errors["base"] = "auth"
             except ZenWifiApiClientCommunicationError as exception:
-                LOGGER.error(exception)
+                _LOGGER.error(exception)
                 _errors["base"] = "connection"
             except ZenWifiApiClientError as exception:
-                LOGGER.exception(exception)
+                _LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
                 # Use username as unique_id

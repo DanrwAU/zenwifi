@@ -7,6 +7,7 @@ https://github.com/DanrwAU/zenwifi
 
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -15,9 +16,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import ZenWifiApiClient
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN
 from .coordinator import ZenWifiDataUpdateCoordinator
 from .data import ZenWifiData
+
+_LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -30,7 +33,7 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
 ]
 
-LOGGER.info("Zen WiFi integration module loaded")
+_LOGGER.info("Zen WiFi integration module loaded")
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
@@ -39,7 +42,7 @@ async def async_setup_entry(
     entry: ZenWifiConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    LOGGER.info("Setting up Zen WiFi integration for %s", entry.data.get(CONF_USERNAME))
+    _LOGGER.info("Setting up Zen WiFi integration for %s", entry.data.get(CONF_USERNAME))
     client = ZenWifiApiClient(
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
@@ -48,7 +51,7 @@ async def async_setup_entry(
 
     coordinator = ZenWifiDataUpdateCoordinator(
         hass=hass,
-        logger=LOGGER,
+        logger=_LOGGER,
         name=DOMAIN,
         update_interval=timedelta(minutes=1),
         client=client,
@@ -61,15 +64,15 @@ async def async_setup_entry(
     )
 
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-    LOGGER.info("Performing first data refresh for Zen WiFi")
+    _LOGGER.info("Performing first data refresh for Zen WiFi")
     await coordinator.async_config_entry_first_refresh()
-    LOGGER.info("First refresh complete, found %d devices", len(coordinator.data))
+    _LOGGER.info("First refresh complete, found %d devices", len(coordinator.data))
 
     # Store coordinator in hass.data for platforms to access
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
     
-    LOGGER.info(
+    _LOGGER.info(
         "Zen WiFi integration loaded with %d devices", len(coordinator.data)
     )
 
