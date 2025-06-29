@@ -69,7 +69,7 @@ async def async_setup_entry(
     # Store coordinator in hass.data for platforms to access
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
-    
+
     # Integration loaded
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

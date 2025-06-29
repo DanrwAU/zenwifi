@@ -58,10 +58,10 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Provisioned devices have a valid date (not 0001-01-01)
             valid_devices = [
                 device for device in devices
-                if device.get("provisionedDateTime") 
+                if device.get("provisionedDateTime")
                 and not device.get("provisionedDateTime", "").startswith("0001-01-01")
             ]
-            
+
             # Filtered to valid devices
 
             # Fetch detailed status for each valid device
@@ -73,7 +73,6 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         status = await self.client.async_get_device_status(device_id)
                         # Merge device info with status
                         device_data[device_id] = {**device, **status}
-                        pass  # Device status merged
                     except Exception:
                         _LOGGER.exception(
                             "Failed to get status for device %s", device_id

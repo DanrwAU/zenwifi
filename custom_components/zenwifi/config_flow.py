@@ -42,10 +42,10 @@ class ZenWifiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.warning(exception)
                 _errors["base"] = "auth"
             except ZenWifiApiClientCommunicationError as exception:
-                _LOGGER.error(exception)
+                _LOGGER.exception("Communication error during authentication")
                 _errors["base"] = "connection"
             except ZenWifiApiClientError as exception:
-                _LOGGER.exception(exception)
+                _LOGGER.exception("Unexpected error during authentication")
                 _errors["base"] = "unknown"
             else:
                 # Use username as unique_id
