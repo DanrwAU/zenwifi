@@ -26,8 +26,8 @@ _LOGGER = logging.getLogger(__name__)
 
 # Map Zen WiFi mode integers to Home Assistant HVAC modes
 ZEN_MODE_TO_HVAC = {
-    0: HVACMode.OFF,  # unknown
-    1: HVACMode.HEAT,  # heat
+    0: HVACMode.HEAT,  # heat
+    1: HVACMode.HEAT,  # heat (keeping for compatibility)
     2: HVACMode.COOL,  # cool
     3: HVACMode.OFF,  # off
     4: HVACMode.HEAT_COOL,  # auto
@@ -45,7 +45,7 @@ HVAC_TO_ZEN_MODE = {
 }
 
 # Define constants for magic numbers
-MODE_HEAT = 1
+MODE_HEAT = 0
 MODE_COOL = 2
 MODE_OFF = 3
 

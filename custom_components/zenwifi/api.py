@@ -154,8 +154,8 @@ class ZenWifiApiClient:
     def get_mode_string(self, mode_int: int) -> str:
         """Convert mode integer to string."""
         mode_map = {
-            0: "unknown",
-            1: "heat",
+            0: "heat",
+            1: "heat",  # keeping for compatibility
             2: "cool",
             3: "off",
             4: "auto",
