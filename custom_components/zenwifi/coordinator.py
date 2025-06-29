@@ -53,6 +53,16 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Get all devices
             devices = await self.client.async_get_devices()
             _LOGGER.debug("Found %d devices from API", len(devices))
+            
+            # Log raw device data for debugging
+            for idx, device in enumerate(devices):
+                _LOGGER.debug(
+                    "Device %d raw data: id=%s, name=%s, locationId=%s",
+                    idx + 1,
+                    device.get("id"),
+                    device.get("name"),
+                    device.get("locationId"),
+                )
 
             # Fetch detailed status for each device
             device_data = {}
