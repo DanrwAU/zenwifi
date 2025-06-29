@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -16,6 +15,8 @@ from .api import (
 )
 
 if TYPE_CHECKING:
+    from datetime import timedelta
+
     from homeassistant.core import HomeAssistant
 
     from .data import ZenWifiConfigEntry
@@ -68,10 +69,9 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         # Still include basic device info even if status fails
                         device_data[device_id] = device
 
-            return device_data
-
         except ZenWifiApiClientAuthenticationError as exception:
             raise ConfigEntryAuthFailed(exception) from exception
         except ZenWifiApiClientError as exception:
             raise UpdateFailed(exception) from exception
-
+        else:
+            return device_data

@@ -187,7 +187,8 @@ class ZenWifiClimate(CoordinatorEntity[ZenWifiDataUpdateCoordinator], ClimateEnt
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
         if hvac_mode not in HVAC_TO_ZEN_MODE:
-            raise ValueError(f"Unsupported HVAC mode: {hvac_mode}")
+            msg = f"Unsupported HVAC mode: {hvac_mode}"
+            raise ValueError(msg)
 
         zen_mode = HVAC_TO_ZEN_MODE[hvac_mode]
 
