@@ -30,6 +30,8 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
 ]
 
+LOGGER.info("Zen WiFi integration module loaded")
+
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(
@@ -37,6 +39,7 @@ async def async_setup_entry(
     entry: ZenWifiConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
+    LOGGER.info("Setting up Zen WiFi integration for %s", entry.data.get(CONF_USERNAME))
     client = ZenWifiApiClient(
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
@@ -58,7 +61,9 @@ async def async_setup_entry(
     )
 
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
+    LOGGER.info("Performing first data refresh for Zen WiFi")
     await coordinator.async_config_entry_first_refresh()
+    LOGGER.info("First refresh complete, found %d devices", len(coordinator.data))
 
     # Store coordinator in hass.data for platforms to access
     hass.data.setdefault(DOMAIN, {})
