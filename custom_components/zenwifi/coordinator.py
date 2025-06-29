@@ -52,19 +52,7 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             # Get all devices
             devices = await self.client.async_get_devices()
-            _LOGGER.debug("Found %d devices from API", len(devices))
-            
-            # Log raw device data for debugging
-            for idx, device in enumerate(devices):
-                _LOGGER.debug(
-                    "Device %d raw data: id=%s, name=%s, locationId=%s, isOnline=%s, provisioned=%s",
-                    idx + 1,
-                    device.get("id"),
-                    device.get("name"),
-                    device.get("locationId"),
-                    device.get("isOnline"),
-                    device.get("provisionedDateTime"),
-                )
+            # Process devices from API
 
             # Filter out devices that are not properly provisioned
             # Provisioned devices have a valid date (not 0001-01-01)
@@ -74,11 +62,7 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 and not device.get("provisionedDateTime", "").startswith("0001-01-01")
             ]
             
-            _LOGGER.info(
-                "Filtered from %d total devices to %d valid devices",
-                len(devices),
-                len(valid_devices),
-            )
+            # Filtered to valid devices
 
             # Fetch detailed status for each valid device
             device_data = {}
@@ -89,13 +73,7 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         status = await self.client.async_get_device_status(device_id)
                         # Merge device info with status
                         device_data[device_id] = {**device, **status}
-                        _LOGGER.debug(
-                            "Device %s (%s): online=%s, mode=%s",
-                            device_id,
-                            device_data[device_id].get("name", "Unknown"),
-                            device_data[device_id].get("isOnline", False),
-                            device_data[device_id].get("mode", "Unknown"),
-                        )
+                        pass  # Device status merged
                     except Exception:
                         _LOGGER.exception(
                             "Failed to get status for device %s", device_id

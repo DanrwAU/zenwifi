@@ -40,6 +40,8 @@ This is a custom Home Assistant integration for controlling Zen WiFi Thermostats
 
 The integration will automatically discover all thermostats associated with your account.
 
+**Note**: By default, only the climate entity is enabled. Temperature sensors and binary sensors are created but disabled. You can enable them in the device page if needed.
+
 ## Entities Created
 
 For each thermostat, the following entities will be created:
@@ -66,6 +68,19 @@ The integration supports the following HVAC modes:
 - Off
 
 Note: Auto, Eco, Emergency Heat, and Zen modes from the native app are not currently supported.
+
+## Entity Management
+
+By default:
+- **Climate entity**: Enabled (for thermostat control)
+- **Sensors**: Disabled (can be enabled per device)
+- **Binary sensors**: Disabled (can be enabled per device)
+
+To enable additional entities:
+1. Go to Settings → Devices & Services
+2. Click on your Zen WiFi device
+3. Click on disabled entities
+4. Enable the ones you want to use
 
 ## Update Interval
 
