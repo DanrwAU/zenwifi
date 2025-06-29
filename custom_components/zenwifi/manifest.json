@@ -3,10 +3,10 @@
   "name": "Zen WiFi Thermostat",
   "codeowners": [],
   "config_flow": true,
-  "documentation": "https://github.com/yourusername/zenwifi-hacs",
+  "documentation": "https://github.com/DanrwAU/zenwifi",
   "integration_type": "device",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/yourusername/zenwifi-hacs/issues",
+  "issue_tracker": "https://github.com/DanrwAU/zenwifi/issues",
   "requirements": [],
   "version": "0.1.0"
 }

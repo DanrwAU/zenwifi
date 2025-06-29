@@ -2,7 +2,7 @@
 Custom integration to integrate Zen WiFi Thermostat with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/yourusername/zenwifi-hacs
+https://github.com/DanrwAU/zenwifi
 """
 
 from __future__ import annotations

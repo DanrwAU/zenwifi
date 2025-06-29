@@ -87,7 +87,7 @@ If your thermostat appears offline:
 
 ## Support
 
-For issues and feature requests, please open an issue on the [GitHub repository](https://github.com/yourusername/zenwifi-hacs).
+For issues and feature requests, please open an issue on the [GitHub repository](https://github.com/DanrwAU/zenwifi).
 
 ## Disclaimer
 
