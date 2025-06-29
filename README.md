@@ -1,46 +1,94 @@
-# Notice
+# Zen WiFi Thermostat Integration for Home Assistant
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-HAVE FUN! 😎
+This is a custom Home Assistant integration for controlling Zen WiFi Thermostats through their cloud API.
 
-## Why?
+## Features
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+- Climate entity for controlling thermostat modes (heat, cool, off)
+- Temperature sensors for current temperature, heating setpoint, and cooling setpoint
+- Binary sensors for online status and C-wire connection status
+- Automatic token refresh for maintaining API connection
+- Support for multiple thermostats on one account
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
+## Installation
 
-## What?
+### HACS Installation (Recommended)
 
-This repository contains multiple files, here is a overview:
+1. Ensure [HACS](https://hacs.xyz/) is installed
+2. Add this repository as a custom repository in HACS:
+   - Navigate to HACS → Integrations
+   - Click the three dots menu → Custom repositories
+   - Add the repository URL and select "Integration" as the category
+3. Search for "Zen WiFi Thermostat" in HACS
+4. Click Install
+5. Restart Home Assistant
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`custom_components/integration_blueprint/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+### Manual Installation
 
-## How?
+1. Copy the `custom_components/zenwifi` folder to your Home Assistant's `custom_components` directory
+2. Restart Home Assistant
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `integration_blueprint` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Integration Blueprint` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scripts/develop` to start HA and test out your new integration.
+## Configuration
 
-## Next steps
+1. Go to Settings → Devices & Services
+2. Click "Add Integration"
+3. Search for "Zen WiFi Thermostat"
+4. Enter your Zen WiFi account credentials (username and password)
+5. Click Submit
 
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon) to https://github.com/home-assistant/brands.
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to [HACS](https://hacs.xyz/docs/publish/start).
+The integration will automatically discover all thermostats associated with your account.
+
+## Entities Created
+
+For each thermostat, the following entities will be created:
+
+### Climate Entity
+- Control thermostat mode (heat, cool, off)
+- Set target temperature
+- View current HVAC action (heating, cooling, idle, off)
+
+### Sensors
+- **Current Temperature** - The current room temperature
+- **Heating Setpoint** - The target temperature when in heating mode
+- **Cooling Setpoint** - The target temperature when in cooling mode
+
+### Binary Sensors
+- **Online** - Whether the thermostat is online and connected
+- **C-Wire Connected** - Whether a C-wire is connected to the thermostat
+
+## Supported Modes
+
+The integration supports the following HVAC modes:
+- Heat
+- Cool
+- Off
+
+Note: Auto, Eco, Emergency Heat, and Zen modes from the native app are not currently supported.
+
+## Update Interval
+
+The integration polls the Zen WiFi API every minute to update device states.
+
+## Troubleshooting
+
+### Authentication Issues
+If you experience authentication errors:
+1. Verify your username and password are correct
+2. Check if you can log into the Zen WiFi mobile app
+3. Remove and re-add the integration
+
+### Device Not Responding
+If your thermostat appears offline:
+1. Check your thermostat's WiFi connection
+2. Verify the thermostat is powered on
+3. Check if you can control it through the Zen WiFi mobile app
+
+## Support
+
+For issues and feature requests, please open an issue on the [GitHub repository](https://github.com/yourusername/zenwifi-hacs).
+
+## Disclaimer
+
+This integration is not affiliated with or endorsed by Zen Ecosystems. Use at your own risk.

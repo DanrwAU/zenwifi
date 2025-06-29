@@ -1,0 +1,21 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Enter your Zen WiFi Thermostat account credentials",
+                "data": {
+                    "username": "Username",
+                    "password": "Password"
+                }
+            }
+        },
+        "error": {
+            "auth": "Invalid username or password",
+            "connection": "Unable to connect to Zen WiFi servers",
+            "unknown": "Unknown error occurred"
+        },
+        "abort": {
+            "already_configured": "Account is already configured"
+        }
+    }
+}

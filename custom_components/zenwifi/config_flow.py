@@ -1,4 +1,4 @@
-"""Adds config flow for Blueprint."""
+"""Config flow for Zen WiFi Thermostat."""
 
 from __future__ import annotations
 
@@ -7,19 +7,18 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from slugify import slugify
 
 from .api import (
-    IntegrationBlueprintApiClient,
-    IntegrationBlueprintApiClientAuthenticationError,
-    IntegrationBlueprintApiClientCommunicationError,
-    IntegrationBlueprintApiClientError,
+    ZenWifiApiClient,
+    ZenWifiApiClientAuthenticationError,
+    ZenWifiApiClientCommunicationError,
+    ZenWifiApiClientError,
 )
 from .const import DOMAIN, LOGGER
 
 
-class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+class ZenWifiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for Zen WiFi Thermostat."""
 
     VERSION = 1
 
@@ -35,25 +34,22 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     username=user_input[CONF_USERNAME],
                     password=user_input[CONF_PASSWORD],
                 )
-            except IntegrationBlueprintApiClientAuthenticationError as exception:
+            except ZenWifiApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
-            except IntegrationBlueprintApiClientCommunicationError as exception:
+            except ZenWifiApiClientCommunicationError as exception:
                 LOGGER.error(exception)
                 _errors["base"] = "connection"
-            except IntegrationBlueprintApiClientError as exception:
+            except ZenWifiApiClientError as exception:
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
-                await self.async_set_unique_id(
-                    ## Do NOT use this in production code
-                    ## The unique_id should never be something that can change
-                    ## https://developers.home-assistant.io/docs/config_entries_config_flow_handler#unique-ids
-                    unique_id=slugify(user_input[CONF_USERNAME])
-                )
+                # Use username as unique_id
+                await self.async_set_unique_id(user_input[CONF_USERNAME])
                 self._abort_if_unique_id_configured()
+                
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
+                    title=f"Zen WiFi - {user_input[CONF_USERNAME]}",
                     data=user_input,
                 )
 
@@ -81,9 +77,11 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _test_credentials(self, username: str, password: str) -> None:
         """Validate credentials."""
-        client = IntegrationBlueprintApiClient(
+        client = ZenWifiApiClient(
             username=username,
             password=password,
             session=async_create_clientsession(self.hass),
         )
-        await client.async_get_data()
+        # Test authentication and get user info
+        await client.async_authenticate()
+        await client.async_get_user_info()
