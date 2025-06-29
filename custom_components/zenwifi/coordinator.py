@@ -57,16 +57,32 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Log raw device data for debugging
             for idx, device in enumerate(devices):
                 _LOGGER.debug(
-                    "Device %d raw data: id=%s, name=%s, locationId=%s",
+                    "Device %d raw data: id=%s, name=%s, locationId=%s, isOnline=%s, provisioned=%s",
                     idx + 1,
                     device.get("id"),
                     device.get("name"),
                     device.get("locationId"),
+                    device.get("isOnline"),
+                    device.get("provisionedDateTime"),
                 )
 
-            # Fetch detailed status for each device
+            # Filter out devices that are not properly provisioned
+            # Provisioned devices have a valid date (not 0001-01-01)
+            valid_devices = [
+                device for device in devices
+                if device.get("provisionedDateTime") 
+                and not device.get("provisionedDateTime", "").startswith("0001-01-01")
+            ]
+            
+            _LOGGER.info(
+                "Filtered from %d total devices to %d valid devices",
+                len(devices),
+                len(valid_devices),
+            )
+
+            # Fetch detailed status for each valid device
             device_data = {}
-            for device in devices:
+            for device in valid_devices:
                 device_id = device.get("id")
                 if device_id:
                     try:
