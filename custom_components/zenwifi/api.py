@@ -218,7 +218,22 @@ class ZenWifiApiClient:
                     )
 
                 _verify_response_or_raise(response)
-                return await response.json()
+                
+                # Check if response has JSON content
+                content_type = response.headers.get("content-type", "")
+                if "application/json" in content_type:
+                    return await response.json()
+                else:
+                    # For non-JSON responses (like empty success responses)
+                    text = await response.text()
+                    _LOGGER.debug(
+                        "Non-JSON response from %s: content-type=%s, body=%s",
+                        endpoint,
+                        content_type,
+                        text[:200],  # Log first 200 chars
+                    )
+                    # Return empty dict for successful non-JSON responses
+                    return {}
 
         except TimeoutError as exception:
             msg = f"Timeout error fetching information - {exception}"

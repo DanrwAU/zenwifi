@@ -78,7 +78,6 @@ class ZenWifiSensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], SensorEntit
     """Zen WiFi Sensor class."""
 
     _attr_has_entity_name = True
-    _attr_entity_registry_enabled_default = False  # Disabled by default
 
     def __init__(
         self,
