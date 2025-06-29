@@ -1,6 +1,5 @@
 {
     "name": "Zen WiFi Thermostat",
-    "domains": ["climate"],
     "homeassistant": "2024.1.0",
     "render_readme": true,
     "country": ["US"]
