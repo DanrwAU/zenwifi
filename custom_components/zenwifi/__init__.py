@@ -63,6 +63,10 @@ async def async_setup_entry(
     # Store coordinator in hass.data for platforms to access
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    
+    LOGGER.info(
+        "Zen WiFi integration loaded with %d devices", len(coordinator.data)
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))

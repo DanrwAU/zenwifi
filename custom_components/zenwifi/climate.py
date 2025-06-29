@@ -61,7 +61,13 @@ async def async_setup_entry(
     entities = []
     for device_id, device_data in coordinator.data.items():
         entities.append(ZenWifiClimate(coordinator, device_id, device_data))
+        _LOGGER.debug(
+            "Creating climate entity for device %s (%s)",
+            device_id,
+            device_data.get("name", "Unknown"),
+        )
 
+    _LOGGER.info("Created %d climate entities", len(entities))
     async_add_entities(entities)
 
 

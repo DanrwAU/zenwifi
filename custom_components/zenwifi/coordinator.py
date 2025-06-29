@@ -52,6 +52,7 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             # Get all devices
             devices = await self.client.async_get_devices()
+            _LOGGER.debug("Found %d devices from API", len(devices))
 
             # Fetch detailed status for each device
             device_data = {}
@@ -62,6 +63,13 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         status = await self.client.async_get_device_status(device_id)
                         # Merge device info with status
                         device_data[device_id] = {**device, **status}
+                        _LOGGER.debug(
+                            "Device %s (%s): online=%s, mode=%s",
+                            device_id,
+                            device_data[device_id].get("name", "Unknown"),
+                            device_data[device_id].get("isOnline", False),
+                            device_data[device_id].get("mode", "Unknown"),
+                        )
                     except Exception:
                         _LOGGER.exception(
                             "Failed to get status for device %s", device_id
