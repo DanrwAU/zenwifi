@@ -23,3 +23,4 @@ class ZenWifiData:
     client: ZenWifiApiClient
     coordinator: ZenWifiDataUpdateCoordinator
     integration: Integration
+

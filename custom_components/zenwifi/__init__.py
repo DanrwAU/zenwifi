@@ -42,7 +42,7 @@ async def async_setup_entry(
         password=entry.data[CONF_PASSWORD],
         session=async_get_clientsession(hass),
     )
-    
+
     coordinator = ZenWifiDataUpdateCoordinator(
         hass=hass,
         logger=LOGGER,
@@ -50,7 +50,7 @@ async def async_setup_entry(
         update_interval=timedelta(minutes=1),
         client=client,
     )
-    
+
     entry.runtime_data = ZenWifiData(
         client=client,
         integration=async_get_loaded_integration(hass, entry.domain),

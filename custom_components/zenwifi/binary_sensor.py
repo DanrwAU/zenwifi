@@ -9,14 +9,15 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import ZenWifiDataUpdateCoordinator
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
     from .data import ZenWifiConfigEntry
 
 BINARY_SENSOR_DESCRIPTIONS = [
@@ -42,25 +43,26 @@ async def async_setup_entry(
 ) -> None:
     """Set up the binary_sensor platform."""
     coordinator: ZenWifiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities = []
     for device_id, device_data in coordinator.data.items():
-        for description in BINARY_SENSOR_DESCRIPTIONS:
-            # Only add sensor if the value exists in device data
-            if description.key in device_data:
-                entities.append(
-                    ZenWifiBinarySensor(
-                        coordinator=coordinator,
-                        device_id=device_id,
-                        device_data=device_data,
-                        entity_description=description,
-                    )
-                )
-    
+        entities.extend(
+            ZenWifiBinarySensor(
+                coordinator=coordinator,
+                device_id=device_id,
+                device_data=device_data,
+                entity_description=description,
+            )
+            for description in BINARY_SENSOR_DESCRIPTIONS
+            if description.key in device_data
+        )
+
     async_add_entities(entities)
 
 
-class ZenWifiBinarySensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], BinarySensorEntity):
+class ZenWifiBinarySensor(
+    CoordinatorEntity[ZenWifiDataUpdateCoordinator], BinarySensorEntity
+):
     """Zen WiFi binary_sensor class."""
 
     _attr_has_entity_name = True
@@ -77,7 +79,7 @@ class ZenWifiBinarySensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], Binar
         self.entity_description = entity_description
         self._device_id = device_id
         self._attr_unique_id = f"{device_id}_{entity_description.key}"
-        
+
         # Set device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, device_id)},
@@ -95,7 +97,7 @@ class ZenWifiBinarySensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], Binar
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            self.coordinator.last_update_success 
+            self.coordinator.last_update_success
             and self.entity_description.key in self.device_data
         )
 
@@ -103,3 +105,4 @@ class ZenWifiBinarySensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], Binar
     def is_on(self) -> bool:
         """Return true if the binary_sensor is on."""
         return bool(self.device_data.get(self.entity_description.key, False))
+

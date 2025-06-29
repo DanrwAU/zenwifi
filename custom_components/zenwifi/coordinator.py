@@ -6,7 +6,6 @@ import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -17,6 +16,8 @@ from .api import (
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from .data import ZenWifiConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             # Get all devices
             devices = await self.client.async_get_devices()
-            
+
             # Fetch detailed status for each device
             device_data = {}
             for device in devices:
@@ -60,14 +61,17 @@ class ZenWifiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         status = await self.client.async_get_device_status(device_id)
                         # Merge device info with status
                         device_data[device_id] = {**device, **status}
-                    except Exception as e:
-                        _LOGGER.error(f"Failed to get status for device {device_id}: {e}")
+                    except Exception:
+                        _LOGGER.exception(
+                            "Failed to get status for device %s", device_id
+                        )
                         # Still include basic device info even if status fails
                         device_data[device_id] = device
-            
+
             return device_data
-            
+
         except ZenWifiApiClientAuthenticationError as exception:
             raise ConfigEntryAuthFailed(exception) from exception
         except ZenWifiApiClientError as exception:
             raise UpdateFailed(exception) from exception
+

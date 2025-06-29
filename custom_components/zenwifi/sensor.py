@@ -10,15 +10,16 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import ZenWifiDataUpdateCoordinator
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
     from .data import ZenWifiConfigEntry
 
 SENSOR_DESCRIPTIONS = [
@@ -56,21 +57,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up the sensor platform."""
     coordinator: ZenWifiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities = []
     for device_id, device_data in coordinator.data.items():
-        for description in SENSOR_DESCRIPTIONS:
-            # Only add sensor if the value exists in device data
-            if description.key in device_data:
-                entities.append(
-                    ZenWifiSensor(
-                        coordinator=coordinator,
-                        device_id=device_id,
-                        device_data=device_data,
-                        entity_description=description,
-                    )
-                )
-    
+        entities.extend(
+            ZenWifiSensor(
+                coordinator=coordinator,
+                device_id=device_id,
+                device_data=device_data,
+                entity_description=description,
+            )
+            for description in SENSOR_DESCRIPTIONS
+            if description.key in device_data
+        )
+
     async_add_entities(entities)
 
 
@@ -91,7 +91,7 @@ class ZenWifiSensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], SensorEntit
         self.entity_description = entity_description
         self._device_id = device_id
         self._attr_unique_id = f"{device_id}_{entity_description.key}"
-        
+
         # Set device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, device_id)},
@@ -109,7 +109,7 @@ class ZenWifiSensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], SensorEntit
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            self.coordinator.last_update_success 
+            self.coordinator.last_update_success
             and self.device_data.get("isOnline", False)
             and self.entity_description.key in self.device_data
         )
@@ -118,3 +118,4 @@ class ZenWifiSensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], SensorEntit
     def native_value(self) -> float | None:
         """Return the native value of the sensor."""
         return self.device_data.get(self.entity_description.key)
+

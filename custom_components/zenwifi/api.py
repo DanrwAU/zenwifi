@@ -12,6 +12,7 @@ import async_timeout
 
 TIMEOUT = 10
 API_HOST = "wifi.zenhq.com"
+HTTP_UNAUTHORIZED = 401
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class ZenWifiApiClient:
             "username": self._username,
             "password": self._password,
         }
-        
+
         response = await self._api_wrapper(
             method="post",
             endpoint="/api/token",
@@ -70,7 +71,7 @@ class ZenWifiApiClient:
             use_auth=False,
             content_type="application/x-www-form-urlencoded",
         )
-        
+
         self._access_token = response.get("access_token")
         self._refresh_token = response.get("refresh_token")
         return response
@@ -78,13 +79,14 @@ class ZenWifiApiClient:
     async def async_refresh_tokens(self) -> dict[str, str]:
         """Refresh the access token using refresh token."""
         if not self._refresh_token:
-            raise ZenWifiApiClientAuthenticationError("No refresh token available")
-            
+            msg = "No refresh token available"
+            raise ZenWifiApiClientAuthenticationError(msg)
+
         data = {
             "grant_type": "refresh_token",
             "refresh_token": self._refresh_token,
         }
-        
+
         response = await self._api_wrapper(
             method="post",
             endpoint="/api/token",
@@ -92,7 +94,7 @@ class ZenWifiApiClient:
             use_auth=False,
             content_type="application/x-www-form-urlencoded",
         )
-        
+
         self._access_token = response.get("access_token")
         self._refresh_token = response.get("refresh_token")
         return response
@@ -110,7 +112,7 @@ class ZenWifiApiClient:
         """Get list of devices."""
         if not self._consumer_id:
             await self.async_get_user_info()
-            
+
         response = await self._api_wrapper(
             method="get",
             endpoint=f"/api/v1/consumer/device/getall?consumerId={self._consumer_id}",
@@ -124,7 +126,9 @@ class ZenWifiApiClient:
             endpoint=f"/api/v1/device/status?deviceId={device_id}",
         )
 
-    async def async_set_mode(self, device_id: str, mode: str, temperature: float | None = None) -> Any:
+    async def async_set_mode(
+        self, device_id: str, mode: str, temperature: float | None = None
+    ) -> Any:
         """Set thermostat mode and optionally temperature."""
         endpoint_map = {
             "heat": "/api/v1/device/heat",
@@ -132,14 +136,15 @@ class ZenWifiApiClient:
             "cool": "/api/v1/device/cool",
             "off": "/api/v1/device/off",
         }
-        
+
         if mode not in endpoint_map:
-            raise ValueError(f"Invalid mode: {mode}")
-            
+            msg = f"Invalid mode: {mode}"
+            raise ValueError(msg)
+
         data = {"deviceid": device_id}
         if mode != "off" and temperature is not None:
             data["setpoint"] = temperature
-            
+
         return await self._api_wrapper(
             method="post",
             endpoint=endpoint_map[mode],
@@ -165,21 +170,22 @@ class ZenWifiApiClient:
         method: str,
         endpoint: str,
         data: dict[str, Any] | None = None,
+        *,
         use_auth: bool = True,
         content_type: str = "application/json",
     ) -> Any:
         """Make API request with automatic token refresh on 401."""
         url = f"https://{API_HOST}{endpoint}"
         headers = {"Accept": "application/json"}
-        
+
         if use_auth:
             if not self._access_token:
                 await self.async_authenticate()
             headers["Authorization"] = f"Bearer {self._access_token}"
-            
+
         if data:
             headers["Content-Type"] = content_type
-            
+
         # Convert data based on content type
         request_data = None
         json_data = None
@@ -187,7 +193,7 @@ class ZenWifiApiClient:
             request_data = urlencode(data)
         elif content_type == "application/json" and data:
             json_data = data
-            
+
         try:
             async with async_timeout.timeout(TIMEOUT):
                 response = await self._session.request(
@@ -197,8 +203,8 @@ class ZenWifiApiClient:
                     data=request_data,
                     json=json_data,
                 )
-                
-                if response.status == 401 and use_auth:
+
+                if response.status == HTTP_UNAUTHORIZED and use_auth:
                     # Try to refresh token
                     await self.async_refresh_tokens()
                     # Retry request with new token
@@ -210,7 +216,7 @@ class ZenWifiApiClient:
                         data=request_data,
                         json=json_data,
                     )
-                    
+
                 _verify_response_or_raise(response)
                 return await response.json()
 
@@ -231,3 +237,4 @@ class ZenWifiApiClient:
             raise ZenWifiApiClientError(
                 msg,
             ) from exception
+
