@@ -1,7 +1,7 @@
 {
   "domain": "zenwifi",
   "name": "Zen WiFi Thermostat",
-  "codeowners": [],
+  "codeowners": ["@DanrwAU"],
   "config_flow": true,
   "documentation": "https://github.com/DanrwAU/zenwifi",
   "integration_type": "device",

@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
-
 from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.homeassistant.triggers import (
     numeric_state as numeric_state_trigger,
+)
+from homeassistant.components.homeassistant.triggers import (
     state as state_trigger,
 )
 from homeassistant.const import (
@@ -21,18 +22,20 @@ from homeassistant.const import (
     CONF_FOR,
     CONF_TYPE,
 )
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
-from homeassistant.helpers import config_validation as cv, entity_registry as er
-from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
+
+if TYPE_CHECKING:
+    from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+    from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
+    from homeassistant.helpers.typing import ConfigType
 
 TRIGGER_TYPES = {
     "turned_off",
     "turned_on",
     "changed_to_heat",
-    "changed_to_cool",
 }
 
 TEMPERATURE_TRIGGER_TYPES = {
@@ -56,38 +59,24 @@ async def async_get_triggers(
 ) -> list[dict[str, Any]]:
     """List device triggers for Zen WiFi Thermostat devices."""
     registry = er.async_get(hass)
-    triggers = []
+    triggers: list[dict[str, Any]] = []
 
-    # Get all entities for this device
-    entries = [
+    climate_entries = [
         entry
         for entry in er.async_entries_for_device(registry, device_id)
         if entry.domain == CLIMATE_DOMAIN
     ]
 
-    # Add triggers for each climate entity
-    for entry in entries:
-        # State change triggers
-        for trigger_type in TRIGGER_TYPES:
-            triggers.append(
-                {
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_ENTITY_ID: entry.entity_id,
-                    CONF_TYPE: trigger_type,
-                }
-            )
-
-        # Temperature triggers
-        for trigger_type in TEMPERATURE_TRIGGER_TYPES:
-            triggers.append(
-                {
-                    CONF_DEVICE_ID: device_id,
-                    CONF_DOMAIN: DOMAIN,
-                    CONF_ENTITY_ID: entry.entity_id,
-                    CONF_TYPE: trigger_type,
-                }
-            )
+    for entry in climate_entries:
+        triggers.extend(
+            {
+                CONF_DEVICE_ID: device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_ENTITY_ID: entry.entity_id,
+                CONF_TYPE: trigger_type,
+            }
+            for trigger_type in TRIGGER_TYPES | TEMPERATURE_TRIGGER_TYPES
+        )
 
     return triggers
 
@@ -120,12 +109,6 @@ async def async_attach_trigger(
             "entity_id": entity_id,
             "to": "heat",
         }
-    elif trigger_type == "changed_to_cool":
-        state_config = {
-            "platform": "state",
-            "entity_id": entity_id,
-            "to": "cool",
-        }
     elif trigger_type == "current_temperature_above":
         state_config = {
             "platform": "numeric_state",
@@ -146,16 +129,18 @@ async def async_attach_trigger(
     if CONF_FOR in config:
         state_config[CONF_FOR] = config[CONF_FOR]
 
-    if trigger_type in ["current_temperature_above", "current_temperature_below"]:
-        state_config = await numeric_state_trigger.async_validate_trigger_config(hass, state_config)
+    if trigger_type in TEMPERATURE_TRIGGER_TYPES:
+        state_config = await numeric_state_trigger.async_validate_trigger_config(
+            hass, state_config
+        )
         return await numeric_state_trigger.async_attach_trigger(
             hass, state_config, action, trigger_info, platform_type="device"
         )
-    else:
-        state_config = await state_trigger.async_validate_trigger_config(hass, state_config)
-        return await state_trigger.async_attach_trigger(
-            hass, state_config, action, trigger_info, platform_type="device"
-        )
+
+    state_config = await state_trigger.async_validate_trigger_config(hass, state_config)
+    return await state_trigger.async_attach_trigger(
+        hass, state_config, action, trigger_info, platform_type="device"
+    )
 
 
 async def async_get_trigger_capabilities(

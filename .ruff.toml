@@ -13,6 +13,9 @@ ignore = [
     "D212", # multi-line-summary-first-line (incompatible with formatter)
     "COM812", # incompatible with formatter
     "ISC001", # incompatible with formatter
+    "ARG001", # HA passes framework-mandated args (e.g. hass) that may go unused
+    "ARG002", # HA flow/callback methods have fixed signatures with unused args
+    "ARG005", # HA callback lambdas have fixed signatures with unused args
 ]
 
 [lint.flake8-pytest-style]

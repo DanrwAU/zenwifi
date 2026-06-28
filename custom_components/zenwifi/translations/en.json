@@ -7,6 +7,13 @@
                     "username": "Username",
                     "password": "Password"
                 }
+            },
+            "reauth_confirm": {
+                "title": "Re-authenticate Zen WiFi",
+                "description": "Your Zen WiFi credentials need updating. Enter the password for {username}.",
+                "data": {
+                    "password": "Password"
+                }
             }
         },
         "error": {
@@ -15,14 +22,14 @@
             "unknown": "Unknown error occurred"
         },
         "abort": {
-            "already_configured": "Account is already configured"
+            "already_configured": "Account is already configured",
+            "reauth_successful": "Re-authentication was successful"
         }
     },
     "device_automation": {
         "condition_type": {
             "is_off": "{entity_name} is off",
             "is_heating": "{entity_name} is heating",
-            "is_cooling": "{entity_name} is cooling",
             "current_temperature_above": "{entity_name} temperature is above {above}°C",
             "current_temperature_below": "{entity_name} temperature is below {below}°C"
         },
@@ -30,7 +37,6 @@
             "turned_off": "{entity_name} turned off",
             "turned_on": "{entity_name} turned on",
             "changed_to_heat": "{entity_name} changed to heat",
-            "changed_to_cool": "{entity_name} changed to cool",
             "current_temperature_above": "{entity_name} temperature above {above}°C",
             "current_temperature_below": "{entity_name} temperature below {below}°C"
         }

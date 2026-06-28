@@ -1,9 +1,9 @@
-"""Climate entity for Zen WiFi Thermostat."""
+"""Climate entity for Zen WiFi Thermostat (heat-only)."""
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from homeassistant.components.climate import (
     ClimateEntity,
@@ -18,59 +18,59 @@ from .const import DOMAIN
 from .coordinator import ZenWifiDataUpdateCoordinator
 
 if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+    from .data import ZenWifiConfigEntry
+
 _LOGGER = logging.getLogger(__name__)
 
-# Map Zen WiFi mode integers to Home Assistant HVAC modes
-ZEN_MODE_TO_HVAC = {
-    0: HVACMode.HEAT,  # heat
-    1: HVACMode.HEAT,  # heat (keeping for compatibility)
-    2: HVACMode.COOL,  # cool
-    3: HVACMode.OFF,  # off
-    4: HVACMode.HEAT_COOL,  # auto
-    5: HVACMode.OFF,  # eco (map to off)
-    6: HVACMode.HEAT,  # emergency_heat (map to heat)
-    7: HVACMode.OFF,  # zen (map to off)
-}
+# This is a heat-only install; cooling is intentionally not supported.
+#
+# The Zen API reports `mode` using two different enumerations depending on the
+# source of the value:
+#   * device telemetry (steady state, hasRequestedState == False): 0=heat, 1=cool, 2=off
+#   * cloud command    (transient,    hasRequestedState == True):  1=heat, 2=cool, 3=off
+# Because cool is never used here, the values we can ever see collapse cleanly to
+# four unambiguous states:
+MODE_HEATING = 0  # device confirmed in heat
+MODE_HEAT_REQUESTED = 1  # heat command sent, not yet confirmed by the device
+MODE_OFF = 2  # device confirmed off
+MODE_OFF_REQUESTED = 3  # off command sent, not yet confirmed by the device
 
-# Map Home Assistant HVAC modes to Zen WiFi modes
-HVAC_TO_ZEN_MODE = {
-    HVACMode.OFF: "off",
-    HVACMode.HEAT: "heat",
-    HVACMode.COOL: "cool",
-    HVACMode.HEAT_COOL: "auto",
-}
+HEAT_MODES = (MODE_HEATING, MODE_HEAT_REQUESTED)
+OFF_MODES = (MODE_OFF, MODE_OFF_REQUESTED)
 
-# Define constants for magic numbers
-MODE_HEAT = 0
-MODE_COOL = 2
-MODE_OFF = 3
+# Human-friendly status surfaced as a state attribute.
+MODE_STATUS_LABELS = {
+    MODE_HEATING: "Heating",
+    MODE_HEAT_REQUESTED: "Heat Requested",
+    MODE_OFF: "Off",
+    MODE_OFF_REQUESTED: "Off Requested",
+}
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: ZenWifiConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Zen WiFi climate entities."""
-    coordinator: ZenWifiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data.coordinator
 
-    entities = []
-    for device_id, device_data in coordinator.data.items():
-        entities.append(ZenWifiClimate(coordinator, device_id, device_data))
-        # Create climate entity
-    async_add_entities(entities)
+    async_add_entities(
+        ZenWifiClimate(coordinator, device_id, device_data)
+        for device_id, device_data in coordinator.data.items()
+    )
 
 
 class ZenWifiClimate(CoordinatorEntity[ZenWifiDataUpdateCoordinator], ClimateEntity):
-    """Representation of a Zen WiFi Thermostat."""
+    """Representation of a Zen WiFi Thermostat (heat-only)."""
 
     _attr_has_entity_name = True
     _attr_name = None
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_hvac_modes: ClassVar[list[HVACMode]] = [HVACMode.OFF, HVACMode.HEAT]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.TURN_OFF
@@ -88,7 +88,6 @@ class ZenWifiClimate(CoordinatorEntity[ZenWifiDataUpdateCoordinator], ClimateEnt
         self._device_id = device_id
         self._attr_unique_id = f"{device_id}_climate"
 
-        # Set device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, device_id)},
             "name": device_data.get("name", "Zen WiFi Thermostat"),
@@ -104,9 +103,8 @@ class ZenWifiClimate(CoordinatorEntity[ZenWifiDataUpdateCoordinator], ClimateEnt
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return (
-            self.coordinator.last_update_success
-            and self.device_data.get("isOnline", False)
+        return self.coordinator.last_update_success and self.device_data.get(
+            "isOnline", False
         )
 
     @property
@@ -115,103 +113,75 @@ class ZenWifiClimate(CoordinatorEntity[ZenWifiDataUpdateCoordinator], ClimateEnt
         return self.device_data.get("currentTemperature")
 
     @property
+    def hvac_mode(self) -> HVACMode:
+        """Return current operation (heat or off)."""
+        mode = self.device_data.get("mode")
+        if mode in HEAT_MODES:
+            return HVACMode.HEAT
+        if mode in OFF_MODES:
+            return HVACMode.OFF
+        _LOGGER.debug("Unexpected Zen mode %s; defaulting to OFF", mode)
+        return HVACMode.OFF
+
+    @property
     def target_temperature(self) -> float | None:
-        """Return the temperature we try to reach."""
-        mode = self.device_data.get("mode", 0)
-        if mode == MODE_HEAT:  # heat
+        """Return the heat setpoint we try to reach."""
+        if self.hvac_mode == HVACMode.HEAT:
             return self.device_data.get("heatingSetpoint")
-        if mode == MODE_COOL:  # cool
-            return self.device_data.get("coolingSetpoint")
         return None
 
     @property
-    def hvac_mode(self) -> HVACMode | None:
-        """Return hvac operation ie. heat, cool mode."""
-        mode = self.device_data.get("mode", 0)
-        return ZEN_MODE_TO_HVAC.get(mode, HVACMode.OFF)
-
-    @property
-    def hvac_modes(self) -> list[HVACMode]:
-        """Return the list of available hvac operation modes."""
-        return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL]
-
-    @property
-    def hvac_action(self) -> HVACAction | None:
+    def hvac_action(self) -> HVACAction:
         """Return the current running hvac operation."""
         if not self.device_data.get("isOnline", False):
             return HVACAction.OFF
-
+        if self.device_data.get("mode") in OFF_MODES:
+            return HVACAction.OFF
         relay_states = self.device_data.get("relayStates", {})
-
-        # Check if any heating relays are active
         if relay_states.get("w1") or relay_states.get("w2"):
             return HVACAction.HEATING
-
-        # Check if any cooling relays are active
-        if relay_states.get("y1") or relay_states.get("y2"):
-            return HVACAction.COOLING
-
-        # Check if fan is running
-        if relay_states.get("g"):
-            return HVACAction.FAN
-
-        # If online but no relays active, it's idle
-        mode = self.device_data.get("mode", 0)
-        if mode == MODE_OFF:  # off
-            return HVACAction.OFF
         return HVACAction.IDLE
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the fine-grained Zen status as a state attribute."""
+        mode = self.device_data.get("mode")
+        return {
+            "status": MODE_STATUS_LABELS.get(mode, f"Unknown ({mode})"),
+            "zen_mode_raw": mode,
+            "pending": self.device_data.get("hasRequestedState", False),
+        }
+
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set new target temperature."""
+        """Set new target temperature (heat only)."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
-
-        # Determine current mode to set appropriate temperature
-        current_mode = self.hvac_mode
-        if current_mode == HVACMode.HEAT:
-            mode = "heat"
-        elif current_mode == HVACMode.COOL:
-            mode = "cool"
-        else:
-            # If off, we can't set temperature
+        if self.hvac_mode != HVACMode.HEAT:
+            # Setpoint only applies while heating.
             return
-
         await self.coordinator.client.async_set_mode(
-            self._device_id,
-            mode,
-            temperature,
+            self._device_id, "heat", temperature
         )
         await self.coordinator.async_request_refresh()
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        """Set new target hvac mode."""
-        if hvac_mode not in HVAC_TO_ZEN_MODE:
+        """Set new target hvac mode (heat or off)."""
+        if hvac_mode == HVACMode.HEAT:
+            await self.coordinator.client.async_set_mode(
+                self._device_id, "heat", self.device_data.get("heatingSetpoint")
+            )
+        elif hvac_mode == HVACMode.OFF:
+            await self.coordinator.client.async_set_mode(self._device_id, "off")
+        else:
             msg = f"Unsupported HVAC mode: {hvac_mode}"
             raise ValueError(msg)
-
-        zen_mode = HVAC_TO_ZEN_MODE[hvac_mode]
-
-        # If setting to heat or cool, use current setpoint
-        temperature = None
-        if hvac_mode == HVACMode.HEAT:
-            temperature = self.device_data.get("heatingSetpoint")
-        elif hvac_mode == HVACMode.COOL:
-            temperature = self.device_data.get("coolingSetpoint")
-
-        await self.coordinator.client.async_set_mode(
-            self._device_id,
-            zen_mode,
-            temperature,
-        )
         await self.coordinator.async_request_refresh()
 
     async def async_turn_on(self) -> None:
-        """Turn the entity on."""
-        # Default to heat mode when turning on
+        """Turn the entity on (heat)."""
         await self.async_set_hvac_mode(HVACMode.HEAT)
 
     async def async_turn_off(self) -> None:
         """Turn the entity off."""
         await self.async_set_hvac_mode(HVACMode.OFF)
-

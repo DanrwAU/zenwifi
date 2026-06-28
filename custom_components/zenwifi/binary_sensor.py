@@ -42,7 +42,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the binary_sensor platform."""
-    coordinator: ZenWifiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data.coordinator
 
     entities = []
     for device_id, device_data in coordinator.data.items():
@@ -105,4 +105,3 @@ class ZenWifiBinarySensor(
     def is_on(self) -> bool:
         """Return true if the binary_sensor is on."""
         return bool(self.device_data.get(self.entity_description.key, False))
-

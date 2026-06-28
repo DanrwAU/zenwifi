@@ -39,14 +39,6 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         icon="mdi:thermometer-chevron-up",
     ),
-    SensorEntityDescription(
-        key="coolingSetpoint",
-        name="Cooling Setpoint",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        icon="mdi:thermometer-chevron-down",
-    ),
 ]
 
 
@@ -56,7 +48,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
-    coordinator: ZenWifiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data.coordinator
 
     entities = []
     for device_id, device_data in coordinator.data.items():
@@ -118,4 +110,3 @@ class ZenWifiSensor(CoordinatorEntity[ZenWifiDataUpdateCoordinator], SensorEntit
     def native_value(self) -> float | None:
         """Return the native value of the sensor."""
         return self.device_data.get(self.entity_description.key)
-

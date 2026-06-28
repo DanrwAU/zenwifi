@@ -20,12 +20,12 @@ from .const import DOMAIN
 from .coordinator import ZenWifiDataUpdateCoordinator
 from .data import ZenWifiData
 
-_LOGGER = logging.getLogger(__name__)
-
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from .data import ZenWifiConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.CLIMATE,
@@ -33,16 +33,15 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
 ]
 
-# Module loaded
+# The thermostat only pushes telemetry to the cloud about every 5 minutes
+# (statusRefreshPeriod=300), so polling faster just refetches identical data.
+# User-initiated changes call async_request_refresh() directly and update at once.
+SCAN_INTERVAL = timedelta(minutes=2)
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ZenWifiConfigEntry,
-) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ZenWifiConfigEntry) -> bool:
     """Set up this integration using UI."""
-    # Setting up integration
     client = ZenWifiApiClient(
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
@@ -53,7 +52,7 @@ async def async_setup_entry(
         hass=hass,
         logger=_LOGGER,
         name=DOMAIN,
-        update_interval=timedelta(minutes=1),
+        update_interval=SCAN_INTERVAL,
         client=client,
     )
 
@@ -63,32 +62,18 @@ async def async_setup_entry(
         coordinator=coordinator,
     )
 
-    # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
     await coordinator.async_config_entry_first_refresh()
-
-    # Store coordinator in hass.data for platforms to access
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-
-    # Integration loaded
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
-async def async_unload_entry(
-    hass: HomeAssistant,
-    entry: ZenWifiConfigEntry,
-) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ZenWifiConfigEntry) -> bool:
     """Handle removal of an entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_reload_entry(
-    hass: HomeAssistant,
-    entry: ZenWifiConfigEntry,
-) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: ZenWifiConfigEntry) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)

@@ -132,8 +132,6 @@ class ZenWifiApiClient:
         """Set thermostat mode and optionally temperature."""
         endpoint_map = {
             "heat": "/api/v1/device/heat",
-            "emergency_heat": "/api/v1/device/emergency/heat",
-            "cool": "/api/v1/device/cool",
             "off": "/api/v1/device/off",
         }
 
@@ -150,20 +148,6 @@ class ZenWifiApiClient:
             endpoint=endpoint_map[mode],
             data=data,
         )
-
-    def get_mode_string(self, mode_int: int) -> str:
-        """Convert mode integer to string."""
-        mode_map = {
-            0: "heat",
-            1: "heat",  # keeping for compatibility
-            2: "cool",
-            3: "off",
-            4: "auto",
-            5: "eco",
-            6: "emergency_heat",
-            7: "zen",
-        }
-        return mode_map.get(mode_int, "unknown")
 
     async def _api_wrapper(
         self,
@@ -218,22 +202,21 @@ class ZenWifiApiClient:
                     )
 
                 _verify_response_or_raise(response)
-                
+
                 # Check if response has JSON content
                 content_type = response.headers.get("content-type", "")
                 if "application/json" in content_type:
                     return await response.json()
-                else:
-                    # For non-JSON responses (like empty success responses)
-                    text = await response.text()
-                    _LOGGER.debug(
-                        "Non-JSON response from %s: content-type=%s, body=%s",
-                        endpoint,
-                        content_type,
-                        text[:200],  # Log first 200 chars
-                    )
-                    # Return empty dict for successful non-JSON responses
-                    return {}
+                # For non-JSON responses (like empty success responses)
+                text = await response.text()
+                _LOGGER.debug(
+                    "Non-JSON response from %s: content-type=%s, body=%s",
+                    endpoint,
+                    content_type,
+                    text[:200],  # Log first 200 chars
+                )
+                # Return empty dict for successful non-JSON responses
+                return {}
 
         except TimeoutError as exception:
             msg = f"Timeout error fetching information - {exception}"
@@ -252,4 +235,3 @@ class ZenWifiApiClient:
             raise ZenWifiApiClientError(
                 msg,
             ) from exception
-

@@ -6,10 +6,10 @@ This is a custom Home Assistant integration for controlling Zen WiFi Thermostats
 
 ## Features
 
-- Climate entity for controlling thermostat modes (heat, cool, off)
-- Temperature sensors for current temperature, heating setpoint, and cooling setpoint
+- Climate entity for controlling the thermostat (heat / off — heat-only)
+- Temperature sensors for current temperature and heating setpoint
 - Binary sensors for online status and C-wire connection status
-- Automatic token refresh for maintaining API connection
+- Automatic token refresh, with re-authentication if credentials change
 - Support for multiple thermostats on one account
 
 ## Installation
@@ -40,21 +40,21 @@ This is a custom Home Assistant integration for controlling Zen WiFi Thermostats
 
 The integration will automatically discover all thermostats associated with your account.
 
-**Note**: By default, only the climate entity is enabled. Temperature sensors and binary sensors are created but disabled. You can enable them in the device page if needed.
+**Note**: The climate entity plus temperature and binary sensors are all created and enabled by default.
 
 ## Entities Created
 
 For each thermostat, the following entities will be created:
 
 ### Climate Entity
-- Control thermostat mode (heat, cool, off)
-- Set target temperature
-- View current HVAC action (heating, cooling, idle, off)
+- Control thermostat mode (heat, off)
+- Set target (heating) temperature
+- View current HVAC action (heating, idle, off)
+- `status` attribute exposing the raw device state (Heating / Heat Requested / Off / Off Requested)
 
 ### Sensors
 - **Current Temperature** - The current room temperature
-- **Heating Setpoint** - The target temperature when in heating mode
-- **Cooling Setpoint** - The target temperature when in cooling mode
+- **Heating Setpoint** - The target temperature when heating
 
 ### Binary Sensors
 - **Online** - Whether the thermostat is online and connected
@@ -62,25 +62,16 @@ For each thermostat, the following entities will be created:
 
 ## Supported Modes
 
-The integration supports the following HVAC modes:
+This is a **heat-only** integration. The supported HVAC modes are:
 - Heat
-- Cool
 - Off
 
-Note: Auto, Eco, Emergency Heat, and Zen modes from the native app are not currently supported.
+Cooling, Auto, Eco, Emergency Heat, and Zen modes are intentionally not supported.
 
 ## Entity Management
 
-By default:
-- **Climate entity**: Enabled (for thermostat control)
-- **Sensors**: Disabled (can be enabled per device)
-- **Binary sensors**: Disabled (can be enabled per device)
-
-To enable additional entities:
-1. Go to Settings → Devices & Services
-2. Click on your Zen WiFi device
-3. Click on disabled entities
-4. Enable the ones you want to use
+All entities (climate, temperature sensors, binary sensors) are enabled by default.
+You can disable any you don't need from the device page in Settings → Devices & Services.
 
 ## Update Interval
 
@@ -107,3 +98,8 @@ For issues and feature requests, please open an issue on the [GitHub repository]
 ## Disclaimer
 
 This integration is not affiliated with or endorsed by Zen Ecosystems. Use at your own risk.
+
+It talks to the legacy `wifi.zenhq.com` cloud API, which is **undocumented and unmaintained**:
+Zen Ecosystems' assets were acquired by Mysa in 2023 and the original Zen consumer app no
+longer works. The API still responds today, but could be shut down at any time — there is no
+local-control fallback for the WiFi edition.
